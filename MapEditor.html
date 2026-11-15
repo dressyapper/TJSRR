@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<style>
+    @keyframes close {
+        0% {
+            right: 0%;
+        }
+        100% {
+            right: -25%;
+        }
+    }
+    @keyframes open {
+        0% {
+            right: -25%;
+        }
+        100% {
+            right: 0%;
+        }
+    }
+    @keyframes close2 {
+        0% {
+            left: 0%;
+        }
+        100% {
+            left: -50%;
+        }
+    }
+    @keyframes open2 {
+        0% {
+            left: -50%;
+        }
+        100% {
+            left: 0%;
+        }
+    }
+    #panel {
+        width: 400px;
+        height: 100vh;
+        right:0%;
+        position:absolute;
+        z-index: 14;
+        animation-duration: 500ms;
+        animation-fill-mode: forwards;
+    }
+    #content {
+        background-color: black;
+        position:absolute;
+        width: 350px;
+        height: 100%;
+        margin:0%;
+        right:0%;
+    }
+    #togglepanel {
+        width: 100px;
+        height: 100px;
+        position: absolute;
+    }
+    #canvas {
+        position: absolute;
+    }
+    #property {
+        width: 350px;
+        height: 100vh;
+        position:absolute;
+        z-index: 14;
+        left:-50%;
+        animation-duration: 500ms;
+        animation-fill-mode: forwards;
+    }
+    #properties {
+        background-color: black;
+        position:absolute;
+        width: 350px;
+        height: 100%;
+        margin:0%;
+    }
+
+</style>
+<body>
+    <div id="property">
+        <div id="properties">
+            <h2 style="color:white;">Properties</h2>
+            
+
+        </div>
+    </div>
+    <div id="panel">
+        <button id="togglepanel" onclick="togglepanel()"></button>
+        <div id="content">
+            <h2 style="color:white;">Tool</h2>
+            <select id="tool" size="1">
+                <option value="draw">Draw</option>
+                <option value="properties">Properties</option>
+                <option value="delete">Eraser</option>
+                <option value="waypoint">Waypoint</option>
+            </select>
+            <br>
+            <select id="drawtype" size="1">
+                <option value="obj">Object</option>
+                <option value="event">Event</option>
+                <option value="start">Start</option>
+                <option value="end">End</option>
+            </select>
+            <br>
+            <input id="color" type="text" placeholder="Color" value="rgb(0,0,0)">
+            <br>
+            <br>
+            <p style="color:white;">Snap</p>
+            <input type="number" placeholder="Snap" id="snap" value="1">
+            <br>
+            <br>
+            <button onclick="addpreset('default')">Add Default Border</button>
+            <br>
+            <button onclick="togglemiddle()">Toggle Middle Reference</button>
+            <br>
+            <button onclick="map = []">Clear Map</button>
+            <button onclick="navigator.clipboard.writeText(map)">Copy Map</button>
+            <br>
+            <br>
+            <br>
+            <br>
+            <br>
+            <br>
+            <input type="text" placeholder="Name" id="map_name" value="My Epic Room">
+            <button onclick="save()" id="save_map">Save Map</button>
+            
+
+        </div>
+    </div>
+
+</body>
+<script defer>
+    let user
+
+    if (localStorage.getItem("TJSRR_Dressyapper_MapEditor_Save")) {
+        try {
+            user = JSON.parse(atob(localStorage.getItem("TJSRR_Dressyapper_MapEditor_Save")))
+        }
+        catch{ 
+            user = JSON.parse((localStorage.getItem("TJSRR_Dressyapper_MapEditor_Save")))
+        }
+    }
+    else {
+        user = {
+            maps: {
+
+            }
+        }
+    }
+
+
+    document.body.style.overflow = "hidden"
+    let panel = {
+        status: true,
+        dom: document.getElementById("panel"),
+        contentdom: document.getElementById("content"),
+        button: document.getElementById("togglepanel"),
+        tool: document.getElementById("tool"),
+        snap: document.getElementById("snap"),
+        drawtype: document.getElementById("drawtype"),
+    }
+    let properties = {
+        status: true,
+        domobj: {},
+        panel: document.getElementById("property"),
+        content: document.getElementById("properties"),
+    }
+    let canvas = document.createElement("canvas")
+    let ctx = canvas.getContext("2d")
+    canvas.height = 900
+    canvas.width = 1450
+    canvas.id = "canvas"
+    document.body.style.margin = "0"
+    canvas.style.margin = "9px"
+    canvas.style.backgroundColor = "grey"
+    canvas.style.imageRendering = "pixelated"
+    let map = []
+    let temp = {}
+    let tool = "draw"
+    let color = "black"
+    let drawtype = "obj"
+
+    let mouse = {
+        x: 0,
+        y: 0,
+        mousein: false,
+        mousedown: false,
+        snap: 1,
+    }
+
+    let presets = {
+        default:
+        [
+    {
+        "x": 0,
+        "y": 0,
+        "h": 900,
+        "w": 150,
+        "color": "black",
+        "type": "obj",
+        "reciever": "",
+        "hidden": false
+    },
+    {
+        "x": 150,
+        "y": 800,
+        "h": 100,
+        "w": 450,
+        "color": "black",
+        "type": "obj",
+        "reciever": "",
+        "hidden": false
+    },
+    {
+        "x": 150,
+        "y": 0,
+        "h": 100,
+        "w": 450,
+        "color": "black",
+        "type": "obj",
+        "reciever": "",
+        "hidden": false
+    },
+    {
+        "x": 850,
+        "y": 0,
+        "h": 100,
+        "w": 600,
+        "color": "black",
+        "type": "obj",
+        "reciever": "",
+        "hidden": false
+    },
+    {
+        "x": 1300,
+        "y": 100,
+        "h": 800,
+        "w": 150,
+        "color": "black",
+        "type": "obj",
+        "reciever": "",
+        "hidden": false
+    },
+    {
+        "x": 850,
+        "y": 800,
+        "h": 100,
+        "w": 450,
+        "color": "black",
+        "type": "obj",
+        "reciever": "",
+        "hidden": false
+    },
+    {
+        "x": 600,
+        "y": 800,
+        "h": 100,
+        "w": 250,
+        "type": "start",
+        "sender": "",
+        "color": "blue",
+        "hidden": false
+    },
+    {
+        "x": 600,
+        "y": 0,
+        "h": 100,
+        "w": 250,
+        "type": "end",
+        "sender": "",
+        "color": "red",
+        "hidden": false
+    }
+]
+    }
+
+
+    function getHoveredElement() {
+        for (i in map) {
+            if (mouse.x >= map[i].x && mouse.x <= map[i].x + map[i].w && mouse.y >= map[i].y && mouse.y <= map[i].y + map[i].h) {
+                return i
+            }
+        }
+
+        return null
+    }
+    function togglepanel() {
+        panel.status = !panel.status
+        panel.dom.style.animationName = panel.status ? "open" : "close"
+    }
+    function toggleproperties(force) {
+        properties.status = force ?? !properties.status //first time ive EVER used ??
+        if (properties.panel.style.animationName == "close2" && !properties.status) {
+            properties.panel.style.animationName = properties.status ? "open2" : "close2"
+        }
+        properties.panel.style.animationName = properties.status ? "open2" : "close2"
+        properties.domobj = {}
+    }
+    function addpreset(preset) {
+        for (i in presets[preset]) {
+            map.push(presets[preset][i])
+        }
+    }
+    function validatemap() {
+        for (i in map) {
+            if (!Object.keys(map[i]).includes("receiver")) {
+                map[i].receiver = ""
+            }
+        }
+    }
+    let middlereferenceid = undefined
+    function togglemiddle() {
+        if (middlereferenceid !== undefined) {
+            delete temp[middlereferenceid]
+            middlereferenceid = undefined
+        }
+        else {
+            middlereferenceid = Object.keys(temp).length
+            middlereference = temp[middlereferenceid] = {
+                x: canvas.width/2,       
+                y: 0,        
+                h: canvas.height,   
+                w: 5,
+                color: "rgba(0,0,0,0.5)",
+            }
+        }
+    }
+    ctx = canvas.getContext("2d")
+    canvas.addEventListener("mouseenter", () => {
+        mouse.mousein = true
+    })
+    canvas.addEventListener("mouseleave", () => {
+        mouse.mousein = false
+    })
+    panel.dom.addEventListener("mouseenter", () => {
+        panel.mousein = true
+    })
+    panel.dom.addEventListener("mouseleave", () => {
+        panel.mousein = false
+    })
+    properties.panel.addEventListener("mouseenter", () => {
+        properties.mousein = true
+    })
+    properties.panel.addEventListener("mouseleave", () => {
+        properties.mousein = false
+    })
+    onmousemove = (m) => {
+        mouse.x = Math.round((m.clientX - 8)/mouse.snap) * mouse.snap
+        mouse.y = Math.round((m.clientY - 8)/mouse.snap) * mouse.snap
+
+        if (tool == "waypoint" && !mouse.mousedown) {
+
+        }
+    }
+    onmousedown = (m) => {
+        mouse.mousedown = true
+        if (tool == "draw") {
+            if (mouse.mousedown && !panel.mousein && !properties.mousein) {
+                let m = [mouse.x, mouse.y]
+                let m2 = []
+                let obj = {
+                    x: undefined,
+                    y: undefined,
+                    h: undefined,
+                    w: undefined
+                }
+                
+                new Promise((resolve) => {
+                    const id = Object.keys(temp).length
+                    temp[id] = {
+                        x: undefined,
+                        y: undefined,
+                        h: undefined,
+                        w: undefined
+                    }
+                    let loop = setInterval(() => {
+                        m2 = [mouse.x, mouse.y]
+                        temp[id].x = m[0]
+                        temp[id].y = m[1]
+                        temp[id].h = -m[1] - -m2[1]
+                        temp[id].w = -m[0] - -m2[0]
+                        if (drawtype == "obj") {
+                            temp[id].color = "rgba(255,255,255,0.5)"
+                        }
+                        else if (drawtype == "event") {
+                            temp[id].color = "rgba(200,255,200,0.5)"
+                        }
+                        else {
+                            temp[id].color = "rgba(255,255,255,0.5)"
+                        }
+                        if (!mouse.mousedown) {
+                            clearInterval(loop)
+                            resolve(id)
+                        }
+                        
+                    },5)
+                }).then((id) => {
+                    obj.type = drawtype
+                    if (drawtype == "obj") {
+                        obj.x = m[0]
+                        obj.y = m[1]
+                        obj.h = -m[1] - -m2[1]
+                        obj.w = -m[0] - -m2[0]
+                        obj.color = color
+                        obj.receiver = ""
+                        obj.hidden = false
+                        delete temp[id]
+                    }
+                    else if (drawtype == "event") {
+                        obj.x = m[0]
+                        obj.y = m[1]
+                        obj.h = -m[1] - -m2[1]
+                        obj.w = -m[0] - -m2[0]
+                        obj.sender = ""
+                        obj.hidden = false
+                        delete temp[id]
+                    }
+                    else if (drawtype == "start" || drawtype == "end") {
+                        obj.x = m[0]
+                        obj.y = m[1]
+                        obj.h = -m[1] - -m2[1]
+                        obj.w = -m[0] - -m2[0]
+                        obj.sender = ""
+                        obj.color = drawtype == "start" ? "blue" : "red"
+                        obj.hidden = false
+                        delete temp[id]
+                    }
+                    if (Math.sign(obj.w) === -1) {
+                        obj.x = obj.x + obj.w
+                        obj.w = -obj.w
+                    }
+                    if (Math.sign(obj.h) === -1) {
+                        obj.y = obj.y + obj.h
+                        obj.h = -obj.h
+                    }
+                    if (!obj.w || !obj.h) {
+                        return
+                    }
+                    else {
+                        map.push(obj)
+                        return
+                    }
+                })
+            }
+        }
+        if (tool == "delete") {
+            if (!(panel.mousein || properties.mousein)) {
+                let el = getHoveredElement()
+                if (el) {
+                    map.splice(el, 1)
+                }
+                new Promise((resolve) => {
+                    let loop = setInterval(() => {
+                        if (!mouse.mousedown) {
+                            clearInterval(loop)
+                            resolve()
+                        } 
+                    })
+                })
+            }
+
+        }
+        if (tool == "properties") {
+            let el = getHoveredElement()
+
+            if (!el || (panel.mousein || properties.mousein)) {return}
+            else {
+                setpropertydom(el)
+                return
+            }
+
+            
+        }
+        if (tool == "waypoint") {
+            if (!(panel.mousein || properties.mousein)) {
+                let order = 1
+    
+                for (i in map) {
+                    if (map[i].type == "waypoint") {
+                        order++;
+                    }
+                }
+    
+                map.push({
+                        x: mouse.x,
+                        y: mouse.y,
+                        w: 5,
+                        h: 5,
+                        color: "black",
+                        type: "waypoint",
+                        hidden: "false",
+                        order: order,
+    
+                    })
+            }
+
+        }
+
+    }
+    onmouseup = (m) => {
+        mouse.mousedown = false
+    }
+    
+    let undocooldown = 0
+    onkeydown = (m) => {
+        if (m.key == "z" && (m.ctrlKey || m.metaKey) && new Date().getTime() > undocooldown) {
+            m.preventDefault()
+            map.splice(map.length-1,1)
+            undocooldown = new Date().getTime() + 100
+        }
+        if (m.key == "e") {
+            togglepanel()
+        }
+        if (m.key == "r") {
+            toggleproperties()
+        }
+    }
+    onkeyup = (m) => {
+        undocooldown = 0
+    }
+    setInterval(() => {
+        if (tool != "draw") {
+            panel.drawtype.style.visibility = "hidden"
+        }
+        else {
+            panel.drawtype.style.visibility = "visible"
+        }
+        tool = panel.tool.value
+        drawtype = panel.drawtype.value
+        mouse.snap = Number(panel.snap.value)
+        color = document.getElementById("color").value || "black"
+    })
+
+    let propertyobjind = null
+    function setpropertydom(el) {
+
+        let obj = map[el]
+        properties.domobj = {}
+        let thisobjind = el
+        propertyobjind = el
+        properties.content.innerHTML = '<h2 style="color:white;">Properties</h2>'
+
+        for (i in obj) {
+            let tag = document.createElement("p")
+            tag.innerText = i
+            tag.style.color = "white"
+
+            let value = document.createElement("input")
+            if (i == "hidden") {
+                value.type = "checkbox"
+                value.checked = obj[i]
+            }
+            else {
+                value.type = "input"
+                value.value = obj[i]
+            }
+
+
+            properties.content.appendChild(tag)
+            properties.content.appendChild(value)
+            properties.content.appendChild(document.createElement("br"))
+            properties.content.appendChild(document.createElement("br"))
+            if (typeof obj[i] == "number") {
+                map[el][i] = Number(value.value)
+            }
+            else {
+                map[el][i] = String(value.value)
+            }
+            properties.domobj[i] = value
+        }
+
+        new Promise((resolve) => {
+                let loop = setInterval(() => {
+                for (i in properties.domobj) {
+                    if (!map[el] || el != propertyobjind || tool != "properties") {
+                        resolve()
+                        clearInterval(loop)
+                    }
+                    else {
+                        if (typeof map[el][i] == "number") {
+                            map[el][i] = Number(properties.domobj[i].value)
+                        }
+                        else if (properties.domobj[i].type == "checkbox") {
+                            map[el][i] = properties.domobj[i].checked
+                        }
+                        else {
+                            map[el][i] = String(properties.domobj[i].value)
+                        }
+                    }
+                }
+
+                if (propertyobjind != thisobjind || tool != "properties") {
+                    resolve()
+                    clearInterval(loop)
+                }
+
+            })
+        }).then(() => {
+            properties.content.innerHTML = '<h2 style="color:white;">Properties</h2>'
+        })
+
+
+    }
+    function sendsignal(signal, param = {properties: []}) {
+        /*{
+            properties: [
+                //Properties to change
+                ["x", 100],
+                ["y", 200],
+                ["color", "blue"]
+            ],
+        }*/
+        function f(x) {
+            for (i in map) {
+                if (Object.keys(map[i]).includes("receiver")) {
+                    console.log("has reciver")
+                    if (map[i].receiver == x) {
+                        console.log("match reciver", i, propertyobjind)
+                        if (Object.keys(param).includes("properties")) {
+                            for (j in param.properties) {
+                                if (Object.keys(map[i]).includes(param.properties[j][0])) {
+                                    if (!Object.keys(properties.domobj).length == 0 && Number(i) == Number(propertyobjind)) {
+                                        console.log(" dom wa", properties.domobj[param.properties[j][0]], param.properties[j][0]) 
+                                        if (properties.domobj[param.properties[j][0]].type == "checkbox") {
+                                            properties.domobj[param.properties[j][0]].checked=((param.properties[j][1] == "true" || param.properties[j][1] === true) ? "true" : "false")
+                                        }
+                                        else {
+                                            properties.domobj[param.properties[j][0]].value=param.properties[j][1]
+                                        }
+                                    }
+                                    else {
+                                        console.log("not dom way")
+                                        if (param.properties[j][0] == "hidden") {
+                                            if (param.properties[j][1].toLowerCase() == "true") {
+                                                map[i][param.properties[j][0]] = true
+                                            }
+                                            else {
+                                                map[i][param.properties[j][0]] = false
+                                            }
+                                        }
+                                        else {
+                                            map[i][param.properties[j][0]] = param.properties[j][1]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (typeof signal == "object") {
+            for (i in signal) {
+                f(signal[i])
+            }
+        }
+        else {
+            f(signal)
+        }
+    }
+    function getEventObjectFromPoint(point) {
+        for (i in map) {
+            if (point.x >= map[i].x && point.x <= map[i].x + map[i].w && point.y >= map[i].y && point.y <= map[i].y + map[i].h && map[i].type == "event") {
+                return i
+            }
+        }
+
+
+    }
+    function save() {
+        function localstorage() {
+            localStorage.setItem("TJSRR_Dressyapper_MapEditor_Save", btoa(JSON.stringify(user)))
+        }
+
+        if (Object.keys(user.maps).includes(document.getElementById("map_name").value)) {
+            if (user.maps[document.getElementById("map_name").value].id != Object.keys(user.maps).length) {
+                if (confirm("A room already has this name, would you like to save? Saving will override the saved room with this one.")) {
+                    user.maps[document.getElementById("map_name").value].map = map
+                    localstorage()
+                    document.getElementById("save_map").innerText = "Saved!"
+                    setTimeout(() => {
+                        document.getElementById("save_map").innerText = "Save Map"
+                    }, 1000)
+                }
+                else {
+                    document.getElementById("save_map").innerText = "Could not save map"
+                    setTimeout(() => {
+                        document.getElementById("save_map").innerText = "Save Map"
+                    }, 1000)
+                }
+            }
+            else {
+                user.maps[document.getElementById("map_name").value].map = map
+                localstorage()
+                document.getElementById("save_map").innerText = "Saved!"
+                setTimeout(() => {
+                    document.getElementById("save_map").innerText = "Save Map"
+                }, 1000)
+            }
+        }
+        else {
+            user.maps[document.getElementById("map_name").value] = {}
+            user.maps[document.getElementById("map_name").value].map = map
+            user.maps[document.getElementById("map_name").value].id = Object.keys(user.maps).length
+
+            localstorage()
+            document.getElementById("save_map").innerText = "Saved room to storage!"
+            setTimeout(() => {
+                document.getElementById("save_map").innerText = "Save Map"
+            }, 1000)
+        }
+
+        
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    //deals with visuals
+    setInterval(() => {
+        ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height)
+        for (i in map) {
+            if (map[i].hidden == 'false' || map[i].hidden === false) {
+                if (!map[i].color && map[i].type != "event") {
+                    ctx.fillStyle = "rgba(255,255,255,0.5)"
+                }
+                else {
+                    if (map[i].type == "event") {
+                        map[i].color = "rgba(100,255,100,0.5)"
+                    } 
+                    ctx.fillStyle = map[i].color
+                }
+                ctx.fillStyle = map[i].color
+                if (map[i].type == "waypoint") {
+                    ctx.fillRect(Number(map[i].x),Number(map[i].y),10,10)
+                }
+                else {
+                    ctx.fillRect(Number(map[i].x),Number(map[i].y),Number(map[i].w),Number(map[i].h))
+                }
+            }
+        }
+        for (i in temp) {
+            ctx.fillStyle = temp[i].color
+            ctx.fillRect(Number(temp[i].x),Number(temp[i].y),Number(temp[i].w),Number(temp[i].h))
+        }
+
+
+        let waypoint = []
+        for (i in map) {
+            if (map[i].type == "waypoint") {
+                waypoint.push(map[i])
+            }
+        }
+
+        waypoint.sort((a, b) => a.order - b.order)
+        for (i in waypoint) {
+
+            if (waypoint[Number(i)+1]) {
+                ctx.beginPath()
+                ctx.moveTo(waypoint[i].x+waypoint[i].w, waypoint[i].y+waypoint[i].h)
+                ctx.lineTo(waypoint[Number(i)+1].x+waypoint[Number(i)+1].w, waypoint[Number(i)+1].y+waypoint[Number(i)+1].h)
+                ctx.stroke()
+            }
+
+        }
+    },5)
+
+    
+
+    panel.tool.onchange = (m) => {
+        if (panel.tool.value != "properties" && panel.status == true) {
+            toggleproperties(false)
+        }
+        else {
+            toggleproperties(true)
+        }
+    }
+
+
+    document.body.appendChild(canvas)
+</script>
+
