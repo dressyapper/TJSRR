@@ -55,17 +55,27 @@ let room = {
 
 //please when is the ui editor
 
-let ui = {
-    roomnumbackground()  {return {
+function getuibyid(id) {
+    for (i in ui) {
+        if (ui[i]().id == id) {
+            return id
+        }
+    }
+}
+let ui = [
+    //roomnumbackground
+    () => {return {
         x: ctx.canvas.width-140,
         y: ctx.canvas.height - 95,
         show: true,
         w:100,
         h:45,
-        color: "rgb(193, 255, 100)"
+        color: "rgb(193, 255, 100)",
+        layer: 0,
     }},
 
-    roomnum() {return {
+    //roomnum
+    () => {return {
         x: ctx.canvas.width-120,
         y: ctx.canvas.height - 65,
         w:50,
@@ -74,41 +84,38 @@ let ui = {
         show: true,
         text: player.room,
         color: "rgb(0, 0, 0)",
+        layer: 1,
     }},
 
-    /*dialogbackground() {return {
-        x: 25,
-        y: 460,
-        show: game.dialog.on,
-        w:ctx.canvas.width-50,
-        h:400,
-        color: "rgb(193, 255, 100)",
-    }},*/
-
-    dialogbackground() {return {
+    //dialogbackground
+    () => {return {
+        id: "dialogbackground",
         x: player.x - 100,
         y: player.y - 150,
         show: game.dialog.on,
         w:200,
         h:100,
         color: "rgba(0, 0, 0, 0.76)",
+        layer: 2,
     }},
 
-    dialog() {
-
+    //dialog
+    () => {
         let u = {
             x: player.x - 95,
             y: player.y - 130,
             show: game.dialog.on,
             size: 20,
-            maxwidth: ui.dialogbackground().w-10,
+            maxwidth: getuibyid("dialogbackground").w-10,
             text: game.dialog.text,
             color: "rgb(255, 255, 255)",
+            layer:3,
         }
         return u
     },
 
-    shadowindicator() {return {
+    //shadowindicator
+    () => {return {
         x: ctx.canvas.width/3 - 4,
         y: ctx.canvas.height/2.5,
         show: true,
@@ -116,18 +123,23 @@ let ui = {
         w: ctx.canvas.width,
         src: "shadowindicator.png",
         filter: "brightness(0%) opacity(0%)",
+        layer: 4,
     }},
-    quaesitorindicator() {return {
+
+    //quaesitorindicator
+    () => {return {
         x: 0,
         y: 0,
         show: true,
         h: 1,
         w: 1,
         src: "quaesitorindicator.png",
-        filter: "none"
+        filter: "none",
+        layer: 5,
     }},
 
-    deathscreen() {return {
+    //deathscreen
+    () => {return {
         x: 0,
         y:0,
         show: player.died,
@@ -135,9 +147,11 @@ let ui = {
         w: ctx.canvas.width,
         filter: "none",
         color: "rgb(0, 0, 0)",
+        layer: 1400000,
     }},
 
-    deathtext() {
+    //deathtext
+    () => {
         let u = {
             x: ctx.canvas.width/2,
             y: ctx.canvas.height/2,
@@ -145,11 +159,12 @@ let ui = {
             size: 20,
             text: game.deathtext,
             color: "rgb(255, 255, 255)",
-            align: "center"
+            align: "center",
+            layer: 1400001,
         }
         return u
     },
-}
+]
 let monsters = {
     shadow,
     quaesitor,
@@ -236,31 +251,33 @@ let engine = {
             }
 
         }
-        for (i in ui) {
-            ctx.globalAlpha = ui[i]().opacity || 1
-            if (ui[i]().show) {
-                ctx.filter = ui[i]().filter || "none"
-                if (Object.keys(ui[i]()).includes("text")) {
-                    ctx.fillStyle = ui[i]().color
-                    ctx.font = ui[i]().size+"px sans-serif"
-                    ctx.textAlign = ui[i]().align || "start"
-                    ctx.fillText(String(ui[i]().text),ui[i]().x,ui[i]().y,ui[i]().maxwidth)
+
+        let uisort = ui.toSorted((a, b) => a().layer - b().layer)
+        for (i in uisort) {
+            ctx.globalAlpha = uisort[i]().opacity || 1
+            if (uisort[i]().show) {
+                ctx.filter = uisort[i]().filter || "none"
+                if (Object.keys(uisort[i]()).includes("text")) {
+                    ctx.fillStyle = uisort[i]().color
+                    ctx.font = uisort[i]().size+"px sans-serif"
+                    ctx.textAlign = uisort[i]().align || "start"
+                    ctx.fillText(String(uisort[i]().text),uisort[i]().x,uisort[i]().y,uisort[i]().maxwidth)
                 }
-                else if (Object.keys(ui[i]()).includes("src")) {
-                    let image = img(ui[i]().src)
-                    ctx.filter = ui[i]().filter || "none"
-                    if (ctx.filter == ui[i]().filter) {
-                        ctx.drawImage(image,ui[i]().x - image.width/2,ui[i]().y - image.height/2,ui[i]().w,ui[i]().h)
+                else if (Object.keys(uisort[i]()).includes("src")) {
+                    let image = img(uisort[i]().src)
+                    ctx.filter = uisort[i]().filter || "none"
+                    if (ctx.filter == uisort[i]().filter) {
+                        ctx.drawImage(image,uisort[i]().x - image.width/2,uisort[i]().y - image.height/2,uisort[i]().w,uisort[i]().h)
                     }
                 }
                 else {
-                    ctx.fillStyle = ui[i]().color
-                    ctx.filter = ui[i]().filter || "none"
-                    ctx.fillRect(ui[i]().x,ui[i]().y,ui[i]().w,ui[i]().h)
+                    ctx.fillStyle = uisort[i]().color
+                    ctx.filter = uisort[i]().filter || "none"
+                    ctx.fillRect(uisort[i]().x,uisort[i]().y,uisort[i]().w,uisort[i]().h)
                 }
             }
                 
-            
+
         }
     },
     draw(x, y, height, width, col = true) {
@@ -281,6 +298,18 @@ let engine = {
                 h: height,
             })
         }
+    },
+    drawui(options = 
+        {
+            x: 0,
+            y:0,
+            show: player.died,
+            h: ctx.canvas.height,
+            w: ctx.canvas.width,
+            filter: "none",
+            color: "rgb(0, 0, 0)",layer: 1400000
+        }) {
+        ui.push(options)
     },
     eraseMap() {
         ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height)

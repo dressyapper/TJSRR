@@ -658,3 +658,8 @@ class him {
 
 }
 
+class montre {
+    /*constructor() {
+        engine.drawui
+    }*/
+}
