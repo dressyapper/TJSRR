@@ -143,7 +143,7 @@ class shadow {
 
     async loop() {
         if (player.maxroom > 0) {
-            currentmonsters[this.id] = {x: this.x, y: this.y, size: this.size, roomnum: this.roomnum, img: this.image}
+            currentmonsters[this.id] = {x: this.x, y: this.y, size: this.size, roomnum: this.roomnum, img: this.image, ind: this.indicatorobj}
         }
         this.indicator()
         this.death()
@@ -151,30 +151,32 @@ class shadow {
     }
 
     raycast() {
-        let ray = {x:this.x, y:this.y}
-        for (let i = 0; i <= 1; i+=0.01) {
-            ray.x = lerp(this.x, player.x, i)
-            ray.y = lerp(this.y, player.y, i)
-
-            if (player.room == this.roomnum) {
-                if (getObjectFromPoint(ray)) {
-                    this.foundplayer = false
-                    break
+        if (!this.done) {
+            let ray = {x:this.x, y:this.y}
+            for (let i = 0; i <= 1; i+=0.01) {
+                ray.x = lerp(this.x, player.x, i)
+                ray.y = lerp(this.y, player.y, i)
+    
+                if (player.room == this.roomnum) {
+                    if (getObjectFromPoint(ray)) {
+                        this.foundplayer = false
+                        break
+                    }
+                    else if (distanceFrom(player, ray) < 10) {
+                        this.foundplayer = true
+                        continue
+                    }
                 }
-                else if (distanceFrom(player, ray) < 10) {
-                    this.foundplayer = true
-                    continue
-                }
+    
+    
+    
             }
-
-
-
         }
 
     }
 
     hitbox() {
-        if (distanceFrom(player, this) <= this.constructor.hitboxsize) {
+        if (distanceFrom(player, this) <= this.constructor.hitboxsize && !this.done) {
             this.plrinhitbox = true
         }
         else {
@@ -183,7 +185,7 @@ class shadow {
     }
     
     death() {
-        if (this.plrinhitbox && this.foundplayer && player.room == this.roomnum) {
+        if (this.plrinhitbox && this.foundplayer && player.room == this.roomnum && !this.done) {
             killplayer("shadow")
         }
     }
@@ -193,31 +195,23 @@ class shadow {
         delete currentmonsters[this.id]
     }
 
+
+    indicatorobj = false
     indicator() {
-        if (!this.done) {
-            let opacity = 100-distanceFrom({x: this.x+(500*Math.abs(player.room - this.roomnum)), y: this.y+(500*Math.abs(player.room - this.roomnum))}, player)/100
-            let thing = () => {return {
-                x: ctx.canvas.width/3 - 4,
-                y: ctx.canvas.height/2.5,
-                show: true,
-                h: ctx.canvas.height,
-                w: ctx.canvas.width,
-                src: "shadowindicator.png",
-                filter: "brightness(0%) opacity("+opacity+"%)",
-            }}
-            ui.shadowindicator = thing
-        }
-        else {
-            ui.shadowindicator = () => {return {
-                x: ctx.canvas.width/3 - 4,
-                y: ctx.canvas.height/2.5,
-                show: false,
-                h: ctx.canvas.height,
-                w: ctx.canvas.width,
-                src: "shadowindicator.png",
-                filter: "brightness(0%) opacity(0%)",
-            }}
-        }
+        let opacity = 100-distanceFrom({x: this.x+(500*Math.abs(player.room - this.roomnum)), y: this.y+(500*Math.abs(player.room - this.roomnum))}, player)/100
+        console.log()
+        let thing = () => {return {
+            id: "shadow"+this.id,
+            x: ctx.canvas.width/3 - 4,
+            y: ctx.canvas.height/2.5,
+            show: true,
+            h: ctx.canvas.height,
+            w: ctx.canvas.width,
+            src: "shadowindicator.png",
+            filter: "brightness(0%) opacity("+opacity+"%)",
+            layer:4,
+        }}
+        this.indicatorobj = thing
     }
 
     sound() {
@@ -394,30 +388,32 @@ class quaesitor {
     }
 
     raycast() {
-        let ray = {x:this.x, y:this.y}
-        for (let i = 0; i <= 1; i+=0.01) {
-            ray.x = lerp(this.x, player.x, i)
-            ray.y = lerp(this.y, player.y, i)
-
-            if (player.room == this.roomnum) {
-                if (getObjectFromPoint(ray)) {
-                    this.foundplayer = false
-                    break
+        if (!this.done) {
+            let ray = {x:this.x, y:this.y}
+            for (let i = 0; i <= 1; i+=0.01) {
+                ray.x = lerp(this.x, player.x, i)
+                ray.y = lerp(this.y, player.y, i)
+    
+                if (player.room == this.roomnum) {
+                    if (getObjectFromPoint(ray)) {
+                        this.foundplayer = false
+                        break
+                    }
+                    else if (distanceFrom(player, ray) < 10) {
+                        this.foundplayer = true
+                        continue
+                    }
                 }
-                else if (distanceFrom(player, ray) < 10) {
-                    this.foundplayer = true
-                    continue
-                }
+    
+    
+    
             }
-
-
-
         }
 
     }
 
     hitbox() {
-        if (distanceFrom(player, this) <= this.constructor.hitboxsize) {
+        if (distanceFrom(player, this) <= this.constructor.hitboxsize && !this.done) {
             this.plrinhitbox = true
         }
         else {
@@ -437,7 +433,7 @@ class quaesitor {
     }
     
     death() {
-        if (this.plrinhitbox && player.room == this.roomnum) {
+        if (this.plrinhitbox && player.room == this.roomnum && !this.done) {
             killplayer("quaesitor")
         }
     }
@@ -614,30 +610,32 @@ class him {
     }
 
     raycast() {
-        let ray = {x:this.x, y:this.y}
-        for (let i = 0; i <= 1; i+=0.01) {
-            ray.x = lerp(this.x, player.x, i)
-            ray.y = lerp(this.y, player.y, i)
+        if (!this.done) {
+            let ray = {x:this.x, y:this.y}
+            for (let i = 0; i <= 1; i+=0.01) {
+                ray.x = lerp(this.x, player.x, i)
+                ray.y = lerp(this.y, player.y, i)
 
-            if (player.room == this.roomnum) {
-                if (getObjectFromPoint(ray)) {
-                    this.foundplayer = false
-                    break
+                if (player.room == this.roomnum) {
+                    if (getObjectFromPoint(ray)) {
+                        this.foundplayer = false
+                        break
+                    }
+                    else if (distanceFrom(player, ray) < 10) {
+                        this.foundplayer = true
+                        continue
+                    }
                 }
-                else if (distanceFrom(player, ray) < 10) {
-                    this.foundplayer = true
-                    continue
-                }
+
+
+
             }
-
-
-
         }
 
     }
 
     hitbox() {
-        if (distanceFrom(player, this) <= this.constructor.hitboxsize) {
+        if (distanceFrom(player, this) <= this.constructor.hitboxsize && !this.done) {
             this.plrinhitbox = true
         }
         else {
@@ -646,7 +644,7 @@ class him {
     }
     
     death() {
-        if (this.plrinhitbox && this.foundplayer && player.room == this.roomnum) {
+        if (this.plrinhitbox && this.foundplayer && player.room == this.roomnum && !this.done) {
             killplayer("him")
         }
     }

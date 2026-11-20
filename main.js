@@ -1,3 +1,7 @@
+//get out of my code
+
+
+//shadow indicator doesnt work because
 //add quaesitor indicator
 //shadow sound
 //quaestiro movement
@@ -65,6 +69,7 @@ function getuibyid(id) {
 let ui = [
     //roomnumbackground
     () => {return {
+        id: "roomnumbackground",
         x: ctx.canvas.width-140,
         y: ctx.canvas.height - 95,
         show: true,
@@ -76,6 +81,7 @@ let ui = [
 
     //roomnum
     () => {return {
+        id: "roomnum",
         x: ctx.canvas.width-120,
         y: ctx.canvas.height - 65,
         w:50,
@@ -102,6 +108,7 @@ let ui = [
     //dialog
     () => {
         let u = {
+            id: "dialog",
             x: player.x - 95,
             y: player.y - 130,
             show: game.dialog.on,
@@ -114,32 +121,10 @@ let ui = [
         return u
     },
 
-    //shadowindicator
-    () => {return {
-        x: ctx.canvas.width/3 - 4,
-        y: ctx.canvas.height/2.5,
-        show: true,
-        h: ctx.canvas.height,
-        w: ctx.canvas.width,
-        src: "shadowindicator.png",
-        filter: "brightness(0%) opacity(0%)",
-        layer: 4,
-    }},
-
-    //quaesitorindicator
-    () => {return {
-        x: 0,
-        y: 0,
-        show: true,
-        h: 1,
-        w: 1,
-        src: "quaesitorindicator.png",
-        filter: "none",
-        layer: 5,
-    }},
 
     //deathscreen
     () => {return {
+        id: "deathscreen",
         x: 0,
         y:0,
         show: player.died,
@@ -153,6 +138,7 @@ let ui = [
     //deathtext
     () => {
         let u = {
+            id: "deathtext",
             x: ctx.canvas.width/2,
             y: ctx.canvas.height/2,
             show: player.died,
@@ -165,6 +151,9 @@ let ui = [
         return u
     },
 ]
+
+let startui 
+startui = Object.assign(ui, startui)
 let monsters = {
     shadow,
     quaesitor,
@@ -251,8 +240,14 @@ let engine = {
             }
 
         }
+        let thisui = [].concat(startui)
+        for (i in currentmonsters) {
+            if (currentmonsters[i].ind) {
+                thisui.push(currentmonsters[i].ind)
+            }
+        }
+        let uisort = thisui.toSorted((a, b) => a().layer - b().layer)
 
-        let uisort = ui.toSorted((a, b) => a().layer - b().layer)
         for (i in uisort) {
             ctx.globalAlpha = uisort[i]().opacity || 1
             if (uisort[i]().show) {
@@ -265,11 +260,9 @@ let engine = {
                 }
                 else if (Object.keys(uisort[i]()).includes("src")) {
                     let image = img(uisort[i]().src)
-                    ctx.filter = uisort[i]().filter || "none"
                     if (ctx.filter == uisort[i]().filter) {
                         ctx.drawImage(image,uisort[i]().x - image.width/2,uisort[i]().y - image.height/2,uisort[i]().w,uisort[i]().h)
-                    }
-                }
+                    }}
                 else {
                     ctx.fillStyle = uisort[i]().color
                     ctx.filter = uisort[i]().filter || "none"
